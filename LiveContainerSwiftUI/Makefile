@@ -20,4 +20,5 @@ LiveContainerSwiftUI_INSTALL_PATH = /Applications/LiveContainer.app/Frameworks
 include $(THEOS_MAKE_PATH)/framework.mk
 
 all::
+	@mkdir -p $(THEOS_STAGING_DIR)/Applications/LiveContainer.app/Resources
 	@/Applications/Xcode.app/Contents/Developer/usr/bin/actool Assets.xcassets --compile $(THEOS_STAGING_DIR)/Applications/LiveContainer.app/Resources --platform iphoneos  --minimum-deployment-target 14.0
