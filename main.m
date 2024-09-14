@@ -19,7 +19,8 @@ static int (*appMain)(int, char**);
 static const char *dyldImageName;
 NSUserDefaults *lcUserDefaults;
 NSUserDefaults *lcSharedDefaults;
-NSString* lcAppUrlScheme;
+NSString *lcAppGroupPath;
+NSString *lcAppUrlScheme;
 
 @implementation NSUserDefaults(LiveContainer)
 + (instancetype)lcUserDefaults {
@@ -28,6 +29,10 @@ NSString* lcAppUrlScheme;
 + (instancetype)lcSharedDefaults {
     return lcSharedDefaults;
 }
++ (NSString *)lcAppGroupPath {
+    return lcAppGroupPath;
+}
+
 + (NSString *)lcAppUrlScheme {
     return lcAppUrlScheme;
 }
@@ -258,8 +263,7 @@ static NSString* invokeAppMain(NSString *selectedApp, int argc, char *argv[]) {
     overwriteExecPath(appBundle.bundlePath);
 
     // Overwrite NSUserDefaults
-    NSUserDefaults.standardUserDefaults = [[NSUserDefaults alloc] initWithSuiteName:appBundle.bundleIdentifier];
-    
+    NSUserDefaults.standardUserDefaults = [[NSUserDefaults alloc] _initWithSuiteName:appBundle.bundleIdentifier container:[[NSURL alloc] initWithString:[NSString stringWithFormat:@"%s", getenv("HOME")]]];
     // Set & save the folder it it does not exist in Info.plist
     NSString* dataUUID = appBundle.infoDictionary[@"LCDataUUID"];
     if(dataUUID == nil) {
@@ -271,10 +275,11 @@ static NSString* invokeAppMain(NSString *selectedApp, int argc, char *argv[]) {
 
     // Overwrite home and tmp path
     NSString *newHomePath = nil;
+    NSURL *libraryPathUrl = [fm URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask].lastObject;
     if(isSharedBundle) {
         newHomePath = [NSString stringWithFormat:@"%@/Data/Application/%@", appGroupFolder.path, dataUUID];
         // move data folder to private library
-        NSURL *libraryPathUrl = [fm URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask].lastObject;
+
         NSString *sharedAppDataFolderPath = [libraryPathUrl.path stringByAppendingPathComponent:@"SharedDocuments"];
         NSString* dataFolderPath = [appGroupFolder.path stringByAppendingPathComponent:[NSString stringWithFormat:@"Data/Application/%@", dataUUID]];
         newHomePath = [sharedAppDataFolderPath stringByAppendingPathComponent: dataUUID];
@@ -298,7 +303,13 @@ static NSString* invokeAppMain(NSString *selectedApp, int argc, char *argv[]) {
         NSString *dirPath = [newHomePath stringByAppendingPathComponent:dir];
         [fm createDirectoryAtPath:dirPath withIntermediateDirectories:YES attributes:nil error:nil];
     }
-    [LCSharedUtils loadPreferencesFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"]];
+//    [LCSharedUtils loadPreferencesFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"]];
+    
+    NSMutableArray<NSString*>* movedFiles = [LCSharedUtils movePreferencesFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"] toPath:[[libraryPathUrl URLByAppendingPathComponent:@"Preferences"] path] sync:NO];
+    NSMutableArray<NSString*>* lastMovedFiles = [[lcUserDefaults objectForKey:@"LCLastMovedPreferences"] mutableCopy];
+    [lastMovedFiles removeObjectsInArray:movedFiles];
+    [lcUserDefaults setObject:lastMovedFiles forKey:@"LCLastMovedPreferences"];
+
     [lcUserDefaults setObject:dataUUID forKey:@"lastLaunchDataUUID"];
     if(isSharedBundle) {
         [lcUserDefaults setObject:@"Shared" forKey:@"lastLaunchType"];
@@ -373,7 +384,7 @@ int LiveContainerMain(int argc, char *argv[]) {
     lcUserDefaults = NSUserDefaults.standardUserDefaults;
     lcSharedDefaults = [[NSUserDefaults alloc] initWithSuiteName: [LCSharedUtils appGroupID]];
     lcAppUrlScheme = NSBundle.mainBundle.infoDictionary[@"CFBundleURLTypes"][0][@"CFBundleURLSchemes"][0];
-    
+    lcAppGroupPath = [[NSFileManager.defaultManager containerURLForSecurityApplicationGroupIdentifier:[NSClassFromString(@"LCSharedUtils") appGroupID]] path];
     // move preferences first then the entire folder
     
 
@@ -388,7 +399,10 @@ int LiveContainerMain(int argc, char *argv[]) {
         } else {
             preferencesTo = [docPathUrl.path stringByAppendingPathComponent:[NSString stringWithFormat:@"Data/Application/%@/Library/Preferences", lastLaunchDataUUID]];
         }
-        [LCSharedUtils movePreferencesFromPath:[NSString stringWithFormat:@"%@/Preferences", libraryPathUrl.path] toPath:preferencesTo];
+        // plists that should be moved away
+        NSMutableArray<NSString*>* movedFiles = [LCSharedUtils movePreferencesFromPath:[NSString stringWithFormat:@"%@/Preferences", libraryPathUrl.path] toPath:preferencesTo sync:YES];
+        [lcUserDefaults setObject:movedFiles forKey:@"LCLastMovedPreferences"];
+        
         [lcUserDefaults removeObjectForKey:@"lastLaunchDataUUID"];
         [lcUserDefaults removeObjectForKey:@"lastLaunchType"];
     }

@@ -6,6 +6,7 @@
 
 @interface NSUserDefaults(private)
 + (void)setStandardUserDefaults:(id)defaults;
+- (instancetype) _initWithSuiteName:(NSString*)name container:(NSURL*)url;
 @end
 
 @interface UIImage(private)
