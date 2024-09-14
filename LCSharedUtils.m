@@ -181,13 +181,105 @@ extern NSString *lcAppUrlScheme;
 }
 
 // move all plists file from fromPath to toPath
-+ (NSMutableArray<NSString*>*)movePreferencesFromPath:(NSString*) plistLocationFrom toPath:(NSString*)plistLocationTo sync:(BOOL)sync {
+//+ (NSMutableArray<NSString*>*)movePreferencesFromPath:(NSString*) plistLocationFrom toPath:(NSString*)plistLocationTo sync:(BOOL)sync {
+//    NSFileManager* fm = [[NSFileManager alloc] init];
+//    NSError* error1;
+//    NSArray<NSString *> * plists = [fm contentsOfDirectoryAtPath:plistLocationFrom error:&error1];
+//
+//    // remove all plists in toPath first
+//    NSArray *directoryContents = [fm contentsOfDirectoryAtPath:plistLocationTo error:&error1];
+//    for (NSString *item in directoryContents) {
+//        // Check if the item is a plist and does not contain "LiveContainer"
+//        if(![item hasSuffix:@".plist"] || [item containsString:@"livecontainer"]) {
+//            continue;
+//        }
+//        NSString *itemPath = [plistLocationTo stringByAppendingPathComponent:item];
+//        // Attempt to delete the file
+//        [fm removeItemAtPath:itemPath error:&error1];
+//    }
+//    
+//    [fm createDirectoryAtPath:plistLocationTo withIntermediateDirectories:YES attributes:@{} error:&error1];
+//    // move all plists in fromPath to toPath
+//    NSMutableArray<NSString*>* ans = [[NSMutableArray alloc] init];
+//    NSMutableArray<NSString*>* lastMovedItems = [lcUserDefaults objectForKey:@"LCLastMovedPreferences"];
+//    NSLog(@"[LC] lastMovedItem = %@", lastMovedItems);
+//    for (NSString* item in plists) {
+//        if(![item hasSuffix:@".plist"] || [item containsString:@"livecontainer"]) {
+//            continue;
+//        }
+//        [ans addObject:item];
+//        NSString* fromPlistPath = [NSString stringWithFormat:@"%@/%@", plistLocationFrom, item];
+//        NSString* toPlistPath = [NSString stringWithFormat:@"%@/%@", plistLocationTo, item];
+//        if(sync) {
+//            if(lastMovedItems && [lastMovedItems containsObject:item]) {
+//                [fm removeItemAtPath:fromPlistPath error:&error1];
+//                continue;
+//            }
+//            
+//            NSString* name = [item substringToIndex:[item length]-6];
+//            NSUserDefaults* nud = [[NSUserDefaults alloc] initWithSuiteName: name];
+//            [[nud dictionaryRepresentation] writeToFile:toPlistPath atomically:YES];
+//            [fm removeItemAtPath:fromPlistPath error:&error1];
+//        } else {
+//            [fm moveItemAtPath:fromPlistPath toPath:toPlistPath error:&error1];
+//        }
+//        
+//        if(error1) {
+//            NSLog(@"[LC] error1 = %@", error1.description);
+//        }
+//        
+//    }
+//    return ans;
+//}
+
++ (void)dumpPreferenceToPath:(NSString*)plistLocationTo {
     NSFileManager* fm = [[NSFileManager alloc] init];
     NSError* error1;
+    NSURL *libraryPathUrl = [fm URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask].lastObject;
+    NSString* plistLocationFrom = [[libraryPathUrl URLByAppendingPathComponent:@"Preferences"] path];
+    NSURL *container = [libraryPathUrl URLByDeletingLastPathComponent];
     NSArray<NSString *> * plists = [fm contentsOfDirectoryAtPath:plistLocationFrom error:&error1];
+    NSLog(@"[LC] dumping plists to %@", plistLocationTo);
+    NSMutableArray<NSString*>* ans = [[NSMutableArray alloc] init];
+    NSMutableArray<NSString*>* lastMovedItems = [lcUserDefaults objectForKey:@"LCLastMovedPreferences"];
+    NSLog(@"[LC] dumping lastMovedItems = %@", lastMovedItems);
+    if(![fm fileExistsAtPath:plistLocationTo]) {
+        [fm createDirectoryAtPath:plistLocationTo withIntermediateDirectories:YES attributes:@{} error:&error1];
+    }
+    NSLog(@"[LC] dumping plists = %@", plists);
+    for (NSString* item in plists) {
+        if(![item hasSuffix:@".plist"] || [[item lowercaseString] containsString:@"livecontainer"]) {
+            continue;
+        }
+        [ans addObject:item];
+        NSString* fromPlistPath = [NSString stringWithFormat:@"%@/%@", plistLocationFrom, item];
+        NSString* toPlistPath = [NSString stringWithFormat:@"%@/%@", plistLocationTo, item];
+        NSString* name = [item substringToIndex:[item length]-6];
+        
+        if(lastMovedItems && [lastMovedItems containsObject:item]) {
+            [fm removeItemAtPath:fromPlistPath error:&error1];
+            continue;
+        }
 
-    // remove all plists in toPath first
+        NSUserDefaults* nud = [[NSUserDefaults alloc] _initWithSuiteName:name container:container];
+        NSLog(@"[LC] dumped plist = %@, %@", item, [nud dictionaryRepresentation]);
+        BOOL success = [[nud dictionaryRepresentation] writeToFile:toPlistPath atomically:YES];
+        NSLog(@"[LC] dumped plist result = %d", success);
+//        [nud removePersistentDomainForName:name];
+        [fm removeItemAtPath:fromPlistPath error:&error1];
+    }
+    NSLog(@"[LC] dump complete lastMovedItems = %@", ans);
+    [lcUserDefaults setObject:ans forKey:@"LCLastMovedPreferences"];
+}
+
++ (void)loadPreferenceFromPath:(NSString*)plistLocationFrom {
+    NSFileManager* fm = [[NSFileManager alloc] init];
+    NSError* error1;
+    NSURL *libraryPathUrl = [fm URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask].lastObject;
+//    NSURL *container = [libraryPathUrl URLByDeletingLastPathComponent];
+    NSString* plistLocationTo = [[libraryPathUrl URLByAppendingPathComponent:@"Preferences"] path];
     NSArray *directoryContents = [fm contentsOfDirectoryAtPath:plistLocationTo error:&error1];
+    NSLog(@"[LC] loading plists from %@", plistLocationFrom);
     for (NSString *item in directoryContents) {
         // Check if the item is a plist and does not contain "LiveContainer"
         if(![item hasSuffix:@".plist"] || [item containsString:@"livecontainer"]) {
@@ -198,38 +290,27 @@ extern NSString *lcAppUrlScheme;
         [fm removeItemAtPath:itemPath error:&error1];
     }
     
-    [fm createDirectoryAtPath:plistLocationTo withIntermediateDirectories:YES attributes:@{} error:&error1];
-    // move all plists in fromPath to toPath
-    NSMutableArray<NSString*>* ans = [[NSMutableArray alloc] init];
-    NSMutableArray<NSString*>* lastMovedItems = [lcUserDefaults objectForKey:@"LCLastMovedPreferences"];
+    NSArray *plists = [fm contentsOfDirectoryAtPath:plistLocationFrom error:&error1];
+    NSMutableArray<NSString*>* lastMovedItems = [[lcUserDefaults objectForKey:@"LCLastMovedPreferences"] mutableCopy];
+    NSLog(@"[LC] loading lastMovedItems = %@", lastMovedItems);
     for (NSString* item in plists) {
-        if(![item hasSuffix:@".plist"] || [item containsString:@"livecontainer"]) {
+        if(![item hasSuffix:@".plist"] || [[item lowercaseString] containsString:@"livecontainer"]) {
             continue;
         }
-        [ans addObject:item];
         NSString* fromPlistPath = [NSString stringWithFormat:@"%@/%@", plistLocationFrom, item];
-        NSString* toPlistPath = [NSString stringWithFormat:@"%@/%@", plistLocationTo, item];
-        if(sync) {
-            if(lastMovedItems && [lastMovedItems containsObject:item]) {
-                [fm removeItemAtPath:fromPlistPath error:&error1];
-                continue;
-            }
-            
-            NSString* name = [item substringToIndex:[item length]-6];
-            NSUserDefaults* nud = [[NSUserDefaults alloc] initWithSuiteName: name];
-            [nud synchronize];
-            [fm moveItemAtPath:fromPlistPath toPath:toPlistPath error:&error1];
-//            [nud removePersistentDomainForName:name];
-        } else {
-            [fm moveItemAtPath:fromPlistPath toPath:toPlistPath error:&error1];
-        }
-        
-        if(error1) {
-            NSLog(@"[LC] error1 = %@", error1.description);
+        NSString* name = [item substringToIndex:[item length]-6];
+        [lcUserDefaults removePersistentDomainForName:name];
+        NSUserDefaults* nud = [[NSUserDefaults alloc] initWithSuiteName:name];
+        NSMutableDictionary* plistDict = [NSMutableDictionary dictionaryWithContentsOfFile:fromPlistPath];
+        NSLog(@"[LC] loaded plist = %@", item);
+        for(NSString* key in plistDict) {
+            [nud setObject:plistDict[key] forKey:key];
         }
         
     }
-    return ans;
+    [lastMovedItems removeObjectsInArray:plists];
+    NSLog(@"[LC] load complete lastMovedItems = %@", lastMovedItems);
+    [lcUserDefaults setObject:lastMovedItems forKey:@"LCLastMovedPreferences"];
 }
 
 // move app data to private folder to prevent 0xdead10cc https://forums.developer.apple.com/forums/thread/126438

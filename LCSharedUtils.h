@@ -9,7 +9,9 @@
 + (void)setWebPageUrlForNextLaunch:(NSString*)urlString;
 + (NSString*)getAppRunningLCSchemeWithBundleId:(NSString*)bundleId;
 + (void)setAppRunningByThisLC:(NSString*)bundleId;
-+ (NSMutableArray<NSString*>*)movePreferencesFromPath:(NSString*) plistLocationFrom toPath:(NSString*)plistLocationTo sync:(BOOL)sync;
+//+ (NSMutableArray<NSString*>*)movePreferencesFromPath:(NSString*) plistLocationFrom toPath:(NSString*)plistLocationTo sync:(BOOL)sync;
++ (void)dumpPreferenceToPath:(NSString*)plistLocationTo;
++ (void)loadPreferenceFromPath:(NSString*)plistLocationFrom;
 + (void)moveSharedAppFolderBack;
 + (void)removeAppRunningByLC:(NSString*)LCScheme;
 + (NSBundle*)findBundleWithBundleId:(NSString*)bundleId;

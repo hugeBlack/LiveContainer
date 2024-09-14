@@ -305,10 +305,14 @@ static NSString* invokeAppMain(NSString *selectedApp, int argc, char *argv[]) {
     }
 //    [LCSharedUtils loadPreferencesFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"]];
     
-    NSMutableArray<NSString*>* movedFiles = [LCSharedUtils movePreferencesFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"] toPath:[[libraryPathUrl URLByAppendingPathComponent:@"Preferences"] path] sync:NO];
-    NSMutableArray<NSString*>* lastMovedFiles = [[lcUserDefaults objectForKey:@"LCLastMovedPreferences"] mutableCopy];
-    [lastMovedFiles removeObjectsInArray:movedFiles];
-    [lcUserDefaults setObject:lastMovedFiles forKey:@"LCLastMovedPreferences"];
+//    NSMutableArray<NSString*>* movedFiles = [LCSharedUtils movePreferencesFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"] toPath:[[libraryPathUrl URLByAppendingPathComponent:@"Preferences"] path] sync:NO];
+//    NSLog(@"[LC] 1movedFiles = %@", movedFiles);
+//    NSMutableArray<NSString*>* lastMovedFiles = [[lcUserDefaults objectForKey:@"LCLastMovedPreferences"] mutableCopy];
+//    NSLog(@"[LC] 1lastMovedItem = %@", lastMovedFiles);
+//    [lastMovedFiles removeObjectsInArray:movedFiles];
+//    NSLog(@"[LC] 1lastMovedItemRemoved = %@", lastMovedFiles);
+//    [lcUserDefaults setObject:lastMovedFiles forKey:@"LCLastMovedPreferences"];
+    [LCSharedUtils loadPreferenceFromPath:[newHomePath stringByAppendingPathComponent:@"Library/Preferences"]];
 
     [lcUserDefaults setObject:dataUUID forKey:@"lastLaunchDataUUID"];
     if(isSharedBundle) {
@@ -400,8 +404,9 @@ int LiveContainerMain(int argc, char *argv[]) {
             preferencesTo = [docPathUrl.path stringByAppendingPathComponent:[NSString stringWithFormat:@"Data/Application/%@/Library/Preferences", lastLaunchDataUUID]];
         }
         // plists that should be moved away
-        NSMutableArray<NSString*>* movedFiles = [LCSharedUtils movePreferencesFromPath:[NSString stringWithFormat:@"%@/Preferences", libraryPathUrl.path] toPath:preferencesTo sync:YES];
-        [lcUserDefaults setObject:movedFiles forKey:@"LCLastMovedPreferences"];
+//        NSMutableArray<NSString*>* movedFiles = [LCSharedUtils movePreferencesFromPath:[NSString stringWithFormat:@"%@/Preferences", libraryPathUrl.path] toPath:preferencesTo sync:YES];
+//        [lcUserDefaults setObject:movedFiles forKey:@"LCLastMovedPreferences"];
+        [LCSharedUtils dumpPreferenceToPath: preferencesTo];
         
         [lcUserDefaults removeObjectForKey:@"lastLaunchDataUUID"];
         [lcUserDefaults removeObjectForKey:@"lastLaunchType"];

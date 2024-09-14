@@ -200,6 +200,11 @@ struct LCSettingsView: View {
                     } label: {
                         Text("Clean Up Keychain")
                     }
+                    Button {
+                        remove()
+                    } label: {
+                        Text("aaaaaa")
+                    }
                 }
                 
                 VStack{
@@ -514,5 +519,9 @@ struct LCSettingsView: View {
             errorInfo = error.localizedDescription
             errorShow = true
         }
+    }
+    
+    func remove() {
+        UserDefaults.standard.removeObject(forKey: "LCLastMovedPreferences")
     }
 }
