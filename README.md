@@ -124,6 +124,11 @@ make package
 - Jump to the entry point
 - The guest app's entry point calls `UIApplicationMain` and start up like any other iOS apps.
 
+### Keychain Semi-Sapeartion
+[256 keychain access groups](./entitlements.xml) are created and LiveContainer decides which one to use based on the hash of app's container folder's name. So there's only n in 256 chance of reusing one keychain access group for one app (n is the number of containers you created for the same app), which is totally usable for most circumstances.
+
+If you are so lucky that 2 containers happen to use the same keychain access group, just create another one.
+
 ## Limitations
 - Entitlements from the guest app are not applied to the host app. This isn't a big deal since sideloaded apps requires only basic entitlements.
 - App Permissions are globally applied.
@@ -133,7 +138,6 @@ make package
 - Querying custom URL schemes might not work(?)
 
 ## TODO
-- Isolate Keychain per app
 - Use ChOma instead of custom MachO parser
 
 ## License
