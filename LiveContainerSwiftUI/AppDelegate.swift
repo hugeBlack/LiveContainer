@@ -71,6 +71,7 @@ import SwiftUI
         window.rootViewController = UIHostingController(rootView: contentView)
         window.makeKeyAndVisible()
         application.shortcutItems = nil
+        UserDefaults.standard.removeObject(forKey: "LCNeedToAcquireJIT")
         return true
     }
     
@@ -102,7 +103,7 @@ import SwiftUI
                         containerName = containerName1
                     }
                 }
-                if let bundleId {
+                if let bundleId, bundleId != "ui"{
                     AppDelegate.launchApp(bundleId: bundleId, container: containerName)
                 }
             }
@@ -125,8 +126,10 @@ import SwiftUI
     
     func applicationWillTerminate(_ application: UIApplication) {
         // Fix launching app if user opens JIT waiting dialog and kills the app. Won't trigger normally.
-        UserDefaults.standard.removeObject(forKey: "selected")
-        UserDefaults.standard.removeObject(forKey: "selectedContainer")
+        if DataManager.shared.model.isJITModalOpen {
+            UserDefaults.standard.removeObject(forKey: "selected")
+            UserDefaults.standard.removeObject(forKey: "selectedContainer")
+        }
         
         if (UserDefaults.standard.object(forKey: "LCLastLanguages") != nil) {
             // recover livecontainer's own language

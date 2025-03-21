@@ -173,30 +173,26 @@
 
 - (UIImage*)icon {
     NSBundle* bundle = [[NSBundle alloc] initWithPath: _bundlePath];
-    UIImage* icon;
-    NSString* path = [_infoPlist valueForKeyPath:@"CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconFiles"][0];
-    if(path) {
-        icon = [UIImage imageNamed:path inBundle:bundle compatibleWithTraitCollection:nil];
+    NSString* iconPath = nil;
+    UIImage* icon = nil;
+
+    if((iconPath = [_infoPlist valueForKeyPath:@"CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconFiles"][0]) &&
+       (icon = [UIImage imageNamed:iconPath inBundle:bundle compatibleWithTraitCollection:nil])) {
+        return icon;
+    }
+    
+    if((iconPath = [_infoPlist valueForKeyPath:@"CFBundleIconFiles"][0]) &&
+       (icon = [UIImage imageNamed:iconPath inBundle:bundle compatibleWithTraitCollection:nil])) {
+        return icon;
+    }
+    
+    if((iconPath = [_infoPlist valueForKeyPath:@"CFBundleIcons~ipad"][@"CFBundlePrimaryIcon"][@"CFBundleIconName"]) &&
+       (icon = [UIImage imageNamed:iconPath inBundle:bundle compatibleWithTraitCollection:nil])) {
+        return icon;
     }
 
-    if(!icon) {
-        NSString* path = [_infoPlist valueForKeyPath:@"CFBundleIconFiles"][0];
-        if(path) {
-            icon = [UIImage imageNamed:path inBundle:bundle compatibleWithTraitCollection:nil];
-        }
-    }
-    
-    if(!icon) {
-        NSString* path = [_infoPlist valueForKeyPath:@"CFBundleIcons~ipad"][@"CFBundlePrimaryIcon"][@"CFBundleIconName"];
-        if(path) {
-            icon = [UIImage imageNamed:path inBundle:bundle compatibleWithTraitCollection:nil];
-        }
-    }
-    
-    if(!icon) {
-        icon = [UIImage imageNamed:@"DefaultIcon"];
-    }
-    return icon;
+    return [UIImage imageNamed:@"DefaultIcon"];
+
 }
 
 - (UIImage *)generateLiveContainerWrappedIcon {

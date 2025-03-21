@@ -170,7 +170,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                         if !installprogressVisible {
                             Menu {
                                 
-                                Button("lc.appList.installFromIpa".loc, systemImage: "document.badge.plus", action: {
+                                Button("lc.appList.installFromIpa".loc, systemImage: "doc.badge.plus", action: {
                                     choosingIPA = true
                                 })
                                 Button("lc.appList.installFromUrl".loc, systemImage: "link.badge.plus", action: {
@@ -525,6 +525,9 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             finalNewApp.orientationLock = appToReplace.appInfo.orientationLock
             finalNewApp.dontInjectTweakLoader = appToReplace.appInfo.dontInjectTweakLoader
             finalNewApp.hideLiveContainer = appToReplace.appInfo.hideLiveContainer
+            finalNewApp.dontLoadTweakLoader = appToReplace.appInfo.dontLoadTweakLoader
+            finalNewApp.fixBlackScreen = appToReplace.appInfo.fixBlackScreen
+            finalNewApp.doUseLCBundleId = appToReplace.appInfo.doUseLCBundleId
             finalNewApp.autoSaveDisabled = false
             finalNewApp.save()
         }
